@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       contents: `Analyze this job description:\n\n${jobDescription.slice(0, 8000)}`,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -91,6 +91,9 @@ export async function POST(request: NextRequest) {
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "Failed to parse AI response. Please try again." }, { status: 500 });
     }
-    return NextResponse.json({ error: `Analysis failed: ${msg}` }, { status: 500 });
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+      return NextResponse.json({ error: "Too many requests right now. Please try again in a minute." }, { status: 429 });
+    }
+    return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 500 });
   }
 }
